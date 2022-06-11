@@ -1,0 +1,44 @@
+#1. 下载
+---
+# 定义执行主机
+- hosts: 192.168.64.15
+  # 定义变量
+  vars:
+    http_port: 80
+    max_clients: 200
+    nodeName: node-1
+
+  # 远程用户名
+  remote_user: ubuntu
+  become: yes
+  become_user: root
+  tasks:
+    - name: Add an Apt signing key, will not download if present
+      ansible.builtin.apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+
+    - name: Add specified repository into sources list
+      ansible.builtin.apt_repository:
+        repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+        state: present
+        filename: elastic-7.x.list
+
+    - name: Update repositories cache and install "elasticsearch" package
+      ansible.builtin.apt:
+        name: elasticsearch
+        update_cache: yes
+
+    - name: "模板更换"
+      ansible.builtin.template: src=elasticsearch.yml dest=/etc/elasticsearch/elasticsearch.yml
+
+    - name: 重启服务
+      ansible.builtin.systemd:
+        daemon_reload: true
+        name: elasticsearch.service
+        state: started
+# cluster.name: my-application
+# node.name: node-2
+# path.repo: ["/usr/local/esrepos"]
+# network.host: 0.0.0.0
+# discovery.seed_hosts: ["192.168.64.12", "192.168.64.6"]
