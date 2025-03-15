@@ -1,0 +1,15 @@
+---
+# Default OpenVPN3 build directory
+build_dir: "/tmp/openvpn3-build"
+
+# Meson build options
+meson_options:
+  - "-Ddefault_library=both"
+  - "-Ddco=disabled"
+  - "-Dselinux=disabled"
+  
+# Enable DCO (Data Channel Offload) 
+enable_dco: false
+
+# Install configuration files
+write_configs: true 

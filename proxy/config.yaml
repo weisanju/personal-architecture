@@ -28,7 +28,7 @@ proxies:
     type: direct
     udp: true
 
-bind-address: "192.168.2.2"
+bind-address: "*"
 
 #log-level: "warn
 
