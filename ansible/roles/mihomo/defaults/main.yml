@@ -7,7 +7,10 @@
 mihomo_version: "latest"
 
 # 本地文件路径，优先级高于 mihomo_version
-mihomo_local_file: "/Volumes/ssd/downloads/mihomo-android-amd64-v1.19.3.gz"
+mihomo_local_file: "/Volumes/ssd/downloads/mihomo-linux-amd64-v1.19.3.gz"
+
+# 如何提取文件名
+mihomo_local_file_name: "{{ mihomo_local_file | basename }}"
 
 # 安装配置
 install_dir: "/usr/bin"
