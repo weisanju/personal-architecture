@@ -146,7 +146,7 @@
 - name: Extract tar.gz Mihomo (Unix-like systems)
   when: ansible_system != "Windows" and file_ext == "tar.gz"
   unarchive:
-    src: "/tmp/mihomo.{{ file_ext }}"
+    src: "/tmp/{{ mihomo_local_file_name }}"
     dest: "{{ install_dir }}"
     remote_src: yes
     owner: "{{ mihomo_user }}"
@@ -157,8 +157,8 @@
 - name: Extract Mihomo (Windows)
   when: ansible_system == "Windows"
   win_unzip:
-    src: "/tmp/mihomo.{{ file_ext }}"
-    dest: "{{ install_dir }}"
+    src: "/tmp/{{ mihomo_local_file_name }}"
+    dest: "{{ install_dir }}/"
   tags: [install, upgrade]
 
 # 服务配置任务
