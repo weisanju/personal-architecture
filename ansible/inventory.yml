@@ -1,0 +1,22 @@
+---
+all:
+  children:
+    linux:
+      hosts:
+        linux-server:
+          ansible_host: 192.168.2.2
+          ansible_user: root
+    
+    macos:
+      hosts:
+        macos-host:
+          ansible_host: your-macos-host-ip
+          ansible_user: your-macos-user
+    
+    windows:
+      hosts:
+        windows-host:
+          ansible_host: your-windows-host-ip
+          ansible_user: your-windows-user
+          ansible_connection: winrm
+          ansible_winrm_server_cert_validation: ignore 

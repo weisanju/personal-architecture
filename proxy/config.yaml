@@ -1,0 +1,256 @@
+proxy-providers:
+  bigwatermelon:
+    url: "https://getinfo.bigwatermelon.org/api/v1/client/subscribe?token=f57d6cac698867046f4576775e08d1a0"
+    type: http
+    interval: 86400
+    health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
+    override:
+      additional-prefix: "[bigwatermelon]"
+
+  vyy:
+    url: http://vyysub.euquw.cn/api/v1/client/subscribe?token=6b4ac464eadd9b023f3ca203ff7d49bf
+    type: http
+    interval: 86400
+    health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
+    override:
+      additional-prefix: "[vyy]"
+
+  vtwo:
+    url: https://vtwoc4.top/user/sub/api/scribe?token=71048e60d436d1af0c70984b2a3402c7
+    type: http
+    interval: 86400
+    health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
+    override:
+      additional-prefix: "[vtwo]"
+
+proxies: 
+  - name: "直连"
+    type: direct
+    udp: true
+
+bind-address: "192.168.2.2"
+
+#log-level: "warn
+
+  #authentication:
+  #  - "weisanju:ps1259103745"
+    #lan-allowed-ips:
+    #- 192.168.192.82/24
+    #- 116.148.121.223/32
+
+    #skip-auth-prefixes:
+    # - 116.148.125.0/24
+
+mixed-port: 7897
+ipv6: true
+allow-lan: true
+unified-delay: false
+tcp-concurrent: true
+external-controller: 0.0.0.0:9090
+external-ui: ui
+external-ui-url: "https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip"
+secret: ps1259103745
+geodata-mode: true
+geox-url:
+  geoip: "https://mirror.ghproxy.com/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat"
+  geosite: "https://mirror.ghproxy.com/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat"
+  mmdb: "https://mirror.ghproxy.com/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb"
+  asn: "https://mirror.ghproxy.com/https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb"
+
+find-process-mode: strict
+global-client-fingerprint: chrome
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+sniffer:
+  enable: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
+
+tun:
+  enable: false
+  stack: mixed
+  dns-hijack:
+    - "any:53"
+    - "tcp://any:53"
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  route-exclude-address:
+    - 192.168.0.0/16
+  include-interface:
+    - eth0
+dns:
+  enable: false
+  ipv6: true
+  respect-rules: true
+ #  enhanced-mode: fake-ip
+  fake-ip-filter:
+    #- "+.lan"
+    - "+.local"
+    - "+.market.xiaomi.com"
+    - "+.dsm.weisanju.fun"
+    - "+.quark.cn"
+  nameserver:
+    - https://120.53.53.53/dns-query
+    - https://223.5.5.5/dns-query
+  proxy-server-nameserver:
+    - https://120.53.53.53/dns-query
+    - https://223.5.5.5/dns-query
+  nameserver-policy:
+    "geosite:cn,private":
+      - https://120.53.53.53/dns-query
+      - https://223.5.5.5/dns-query
+    "geosite:geolocation-!cn":
+      - "https://dns.cloudflare.com/dns-query"
+      - "https://dns.google/dns-query"
+
+proxy-groups:
+
+  - name: 默认
+    type: select
+    proxies: [香港,台湾,日本,新加坡,美国,其它地区]
+
+  - name: Google
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: Telegram
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: Twitter
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: 哔哩哔哩
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: 巴哈姆特
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: YouTube
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: NETFLIX
+    type: select
+    proxies: [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: Spotify
+    type: select
+    proxies:  [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: Github
+    type: select
+    proxies:  [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  - name: 国内
+    type: select
+    proxies:  [直连]
+
+  - name: 其他
+    type: select
+    proxies:  [默认,香港,台湾,日本,新加坡,美国,其它地区,直连]
+
+  #分隔,下面是地区分组
+  - name: 香港
+    include-all: true
+    filter: "(?i)港|hk|hongkong|hong kong"
+    type: load-balance
+    url: 'https://www.gstatic.com/generate_204'
+    interval: 300
+    lazy: true
+    strategy: consistent-hashing
+
+  - name: 台湾
+    include-all: true
+    filter: "台湾"
+    type: load-balance
+    url: 'https://www.gstatic.com/generate_204'
+    interval: 300
+    lazy: true
+    strategy: consistent-hashing
+
+
+  - name: 日本
+    include-all: true
+    filter: "(?i)日|jp|japan"
+    type: load-balance
+    url: 'https://www.gstatic.com/generate_204'
+    interval: 300
+    lazy: true
+    strategy: consistent-hashing
+
+  - name: 美国
+    include-all: true
+    filter: "(?i)美|us|unitedstates|united states"
+    type: load-balance
+    url: 'https://www.gstatic.com/generate_204'
+    interval: 300
+    lazy: true
+    strategy: consistent-hashing
+
+  - name: 新加坡
+    include-all: true
+    filter: "(?i)(新|sg|singapore)"
+    type: load-balance
+    url: 'https://www.gstatic.com/generate_204'
+    interval: 300
+    lazy: true
+    strategy: consistent-hashing
+
+  - name: 其它地区
+    type: select
+    include-all: true
+    filter: "(?i)^(?!.*(?:🇭🇰|🇯🇵|🇺🇸|🇸🇬|🇨🇳|港|hk|hongkong|台|tw|taiwan|日|jp|japan|新|sg|singapore|美|us|unitedstates)).*"
+
+      #  - name: 全部节点
+      #type: select
+      #include-all: true
+
+      #  - name: 自动选择香港
+      #type: url-test
+      #include-all: true
+      #tolerance: 10
+
+rules:
+  - DOMAIN-SUFFIX,chatgpt.com,新加坡
+  - DOMAIN-SUFFIX,openai.com,新加坡
+  - DOMAIN-SUFFIX,claude.ai,新加坡
+  - DOMAIN-SUFFIX,huggingface.co,台湾
+  - DOMAIN-SUFFIX,anthropic.com,新加坡
+  - DOMAIN-SUFFIX,mypikpak.com,直连
+  - DOMAIN-SUFFIX,mypikpak.net,直连
+  - DOMAIN,chatgpt.com,台湾
+  - GEOIP,lan,直连,no-resolve
+  - GEOSITE,github,Github
+  - GEOSITE,twitter,Twitter
+  - GEOSITE,youtube,YouTube
+  - GEOSITE,google,Google
+  - GEOSITE,telegram,Telegram
+  - GEOSITE,netflix,NETFLIX
+  - GEOSITE,bilibili,哔哩哔哩
+  - GEOSITE,bahamut,巴哈姆特
+  - GEOSITE,spotify,Spotify
+  - GEOSITE,CN,国内
+  - GEOSITE,geolocation-!cn,其他
+  - GEOIP,google,Google
+  - GEOIP,netflix,NETFLIX
+  - GEOIP,telegram,Telegram
+  - GEOIP,twitter,Twitter
+  - GEOIP,CN,国内
+  - MATCH,其他

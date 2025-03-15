@@ -1,0 +1,6 @@
+---
+- name: Deploy Mihomo
+  hosts: linux
+  gather_facts: yes
+  roles:
+    - mihomo

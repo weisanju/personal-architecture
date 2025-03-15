@@ -1,0 +1,201 @@
+---
+
+- name: Display mihomo role variables
+  debug:
+    msg: |
+      Installation Settings:
+        mihomo_version: {{ mihomo_version }}
+        mihomo_local_file: {{ mihomo_local_file }}
+        install_dir: {{ install_dir }}
+        mihomo_user: {{ mihomo_user }}
+        mihomo_group: {{ mihomo_group }}
+      
+      Config Settings:
+        config_dir: {{ config_dir }}
+        config_file: {{ config_file }}
+        config_template: {{ config_template }}
+        backup_config: {{ backup_config }}
+      
+      System Mappings:
+        OS: {{ ansible_system }} -> {{ os_mapping[ansible_system] }}
+        Architecture: {{ ansible_architecture }} -> {{ arch_mapping[ansible_architecture] }}
+        File Extension: {{ file_extension_mapping[ansible_system] }}
+      
+      Service Settings:
+        service_enabled: {{ service_enabled }}
+        service_state: {{ service_state }}
+  tags: always
+
+# 安装和升级相关任务（带 install, upgrade 标签）
+- name: Create installation directory
+  file:
+    path: "{{ install_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ mihomo_user }}"
+    group: "{{ mihomo_group }}"
+  tags: [install, upgrade]
+
+- name: Set platform specific variables
+  set_fact:
+    os_name: "{{ os_mapping[ansible_system] }}"
+    arch_name: "{{ arch_mapping[ansible_architecture] }}"
+    file_ext: "{{ file_extension_mapping[ansible_system] }}"
+  tags: [install, upgrade]
+
+- name: Get latest release version from GitHub
+  uri:
+    url: https://api.github.com/repos/MetaCubeX/mihomo/releases/latest
+    return_content: yes
+  register: github_release
+  when: mihomo_version == "latest"
+  tags: [install, upgrade]
+
+- name: Set download URL
+  set_fact:
+    download_url: >-
+      {% if mihomo_version == "latest" %}
+      https://github.com/MetaCubeX/mihomo/releases/download/{{ github_release.json.tag_name }}/mihomo-{{ os_name }}-{{ arch_name }}.{{ file_ext }}
+      {% elif mihomo_version | regex_search('^https?://') %}
+      {{ mihomo_version }}
+      {% else %}
+      https://github.com/MetaCubeX/mihomo/releases/download/v{{ mihomo_version }}/mihomo-{{ os_name }}-{{ arch_name }}.{{ file_ext }}
+      {% endif %}
+  when: not mihomo_local_file
+  tags: [install, upgrade]
+
+- name: Download Mihomo
+  get_url:
+    url: "{{ download_url }}"
+    dest: "/tmp/mihomo.{{ file_ext }}"
+    mode: '0644'
+  when: not mihomo_local_file
+  tags: [install, upgrade]
+
+- name: Copy local Mihomo file
+  copy:
+    src: "{{ mihomo_local_file }}"
+    dest: "/tmp/mihomo.{{ file_ext }}"
+    mode: '0644'
+  when: mihomo_local_file != ""
+  tags: [install, upgrade]
+
+# 配置文件相关任务（带 config 标签）
+- name: Create mihomo config directory
+  file:
+    path: "{{ config_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ mihomo_user }}"
+    group: "{{ mihomo_group }}"
+  become: yes
+  tags: [install, config]
+
+- name: Backup existing config
+  copy:
+    src: "{{ config_dir }}/{{ config_file }}"
+    dest: "{{ config_dir }}/{{ config_file }}.bak"
+    remote_src: yes
+  ignore_errors: yes
+  when: backup_config | bool
+  become: yes
+  tags: [config]
+
+- name: Copy mihomo config file
+  copy:
+    src: "{{ config_template }}"
+    dest: "{{ config_dir }}/{{ config_file }}"
+    mode: '0644'
+    owner: "{{ mihomo_user }}"
+    group: "{{ mihomo_group }}"
+  become: yes
+  notify: restart mihomo
+  tags: [install, config]
+
+# 服务相关任务（带 service 标签）
+- name: Stop mihomo service before upgrade (Linux)
+  systemd:
+    name: mihomo
+    state: stopped
+  become: yes
+  when: ansible_system == "Linux"
+  tags: [upgrade]
+
+- name: Stop mihomo service before upgrade (macOS)
+  command: launchctl unload "{{ ansible_env.HOME }}/Library/LaunchAgents/com.mihomo.plist"
+  ignore_errors: yes
+  when: ansible_system == "Darwin"
+  tags: [upgrade]
+
+# 解压和安装任务
+- name: Extract gzipped Mihomo (Unix-like systems)
+  when: ansible_system != "Windows" and file_ext == "gz"
+  shell: "gunzip -c /tmp/mihomo.{{ file_ext }} > {{ install_dir }}/mihomo"
+  args:
+    creates: "{{ install_dir }}/mihomo"
+  tags: [install, upgrade]
+
+- name: Set permissions for extracted Mihomo (Unix-like systems)
+  when: ansible_system != "Windows" and file_ext == "gz"
+  file:
+    path: "{{ install_dir }}/mihomo"
+    owner: "{{ mihomo_user }}"
+    group: "{{ mihomo_group }}"
+    mode: '0755'
+  tags: [install, upgrade]
+
+- name: Extract tar.gz Mihomo (Unix-like systems)
+  when: ansible_system != "Windows" and file_ext == "tar.gz"
+  unarchive:
+    src: "/tmp/mihomo.{{ file_ext }}"
+    dest: "{{ install_dir }}"
+    remote_src: yes
+    owner: "{{ mihomo_user }}"
+    group: "{{ mihomo_group }}"
+    mode: '0755'
+  tags: [install, upgrade]
+
+- name: Extract Mihomo (Windows)
+  when: ansible_system == "Windows"
+  win_unzip:
+    src: "/tmp/mihomo.{{ file_ext }}"
+    dest: "{{ install_dir }}"
+  tags: [install, upgrade]
+
+# 服务配置任务
+- name: Create systemd service (Linux only)
+  when: ansible_system == "Linux"
+  template:
+    src: mihomo.service.j2
+    dest: /etc/systemd/system/mihomo.service
+    mode: '0644'
+  become: yes
+  notify: restart mihomo
+  tags: [install, service]
+
+- name: Create LaunchAgent (macOS only)
+  when: ansible_system == "Darwin"
+  template:
+    src: com.mihomo.plist.j2
+    dest: "{{ ansible_env.HOME }}/Library/LaunchAgents/com.mihomo.plist"
+    mode: '0644'
+  notify: reload launchagent
+  tags: [install, service]
+
+- name: Create Windows service (Windows only)
+  when: ansible_system == "Windows"
+  win_service:
+    name: Mihomo
+    path: "{{ install_dir }}\\mihomo.exe"
+    start_mode: auto
+    state: started
+  tags: [install, service]
+
+- name: Ensure service is started and enabled (Linux)
+  systemd:
+    name: mihomo
+    state: "{{ service_state }}"
+    enabled: "{{ service_enabled }}"
+  become: yes
+  when: ansible_system == "Linux"
+  tags: [install, service, upgrade]
