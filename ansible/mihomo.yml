@@ -1,6 +1,0 @@
----
-- name: Deploy Mihomo
-  hosts: aliyun    # 这里改成具体的主机名，比如 duicloud 或 aliyun
-  gather_facts: yes
-  roles:
-    - mihomo

@@ -1,5 +1,0 @@
----
-# Debian/Ubuntu specific variables
-
-wireguard_config_path: /etc/wireguard
-wireguard_service_name: wg-quick@{{ wireguard_interface }} 
