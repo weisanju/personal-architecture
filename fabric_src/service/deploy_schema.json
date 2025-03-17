@@ -55,6 +55,10 @@
     "restart_sec": {
       "type": "integer",
       "minimum": 1
+    },
+    "binary": {
+      "type": "string",
+      "pattern": "^[.a-zA-Z0-9_-]+$"
     }
   }
 }

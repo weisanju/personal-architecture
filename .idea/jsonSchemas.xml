@@ -30,7 +30,9 @@
               <option name="patterns">
                 <list>
                   <Item>
-                    <option name="path" value="fabric_src/service/alist/definitions.json" />
+                    <option name="pattern" value="true" />
+                    <option name="path" value="**/definitions.json" />
+                    <option name="mappingKind" value="Pattern" />
                   </Item>
                 </list>
               </option>

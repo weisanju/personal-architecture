@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def download_file(url: str, use_cache: bool = True) -> Tuple[bool, str]:
+def download_file(url: str, use_cache: bool = True) -> str:
     """
     下载文件到本地
     
@@ -35,7 +35,7 @@ def download_file(url: str, use_cache: bool = True) -> Tuple[bool, str]:
         if use_cache:
             cached_path = _download_cache.get(url)
             if cached_path:
-                return True, cached_path
+                return cached_path
 
         # 从URL中提取文件名
         filename = unquote(os.path.basename(urlparse(url).path))
@@ -59,15 +59,17 @@ def download_file(url: str, use_cache: bool = True) -> Tuple[bool, str]:
             cached_path = _download_cache.put(url, temp_path)
             os.unlink(temp_path)
             os.rmdir(temp_dir)
-            return True, cached_path
+            return cached_path
 
-        return True, temp_path
+        return temp_path
 
     except Exception as e:
-        print(f"Error downloading file: {str(e)}")
+        logger.exception(f"Error downloading file: {str(e)}", exc_info=e)
+
         if 'temp_dir' in locals() and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
-        return False, ""
+
+        raise e
 
 
 def _create_temp_tgz(source_path: str) -> str:
@@ -83,15 +85,17 @@ def _create_temp_tgz(source_path: str) -> str:
     # 创建临时目录
     temp_dir = tempfile.mkdtemp()
     try:
-        source_name = os.path.basename(source_path)
+        # 获取文件名 不包含扩展名
+        file_name = os.path.basename(source_path)
 
-        tgz_path = os.path.join(temp_dir, f"{source_name}.tar.gz")
+        file_name_with_no_ext = os.path.splitext(file_name)[0]
+
+        tgz_path = os.path.join(temp_dir, f"{file_name_with_no_ext}.tar.gz")
 
         # 如果是目录，直接打包
         if os.path.isdir(source_path):
-            base_dir = os.path.dirname(source_path)
             shutil.make_archive(
-                os.path.join(temp_dir, source_name),  # 不包含.tgz的路径
+                os.path.join(temp_dir, file_name_with_no_ext),  # 不包含.tgz的路径
                 'gztar',  # 格式为tar.gz
                 root_dir=source_path,  # 要打包的目录
             )
@@ -116,6 +120,20 @@ def _create_temp_tgz(source_path: str) -> str:
                     'gztar',
                     root_dir=temp_extract
                 )
+            elif source_path.endswith('.gz'):
+                import tarfile
+                import gzip
+                # 创建tar文件并添加gzip文件内容
+                with tarfile.open(tgz_path, 'w:gz') as tar:
+                    # 创建tarinfo对象
+                    tarinfo = tarfile.TarInfo(name=file_name_with_no_ext)
+                    # 获取解压后的文件大小
+                    with gzip.open(source_path, 'rb') as gz_file:
+                        # 移动到文件末尾以获取大小
+                        gz_file.seek(0, 2)
+                        tarinfo.size = gz_file.tell()
+                        gz_file.seek(0)
+                        tar.addfile(tarinfo, gz_file)
             else:
                 # 其他类型文件，直接打包
                 shutil.make_archive(
@@ -124,6 +142,7 @@ def _create_temp_tgz(source_path: str) -> str:
                     root_dir=os.path.dirname(source_path),
                     base_dir=os.path.basename(source_path)
                 )
+
         else:
             raise ValueError(f"Source path does not exist: {source_path}")
         return tgz_path
@@ -152,10 +171,7 @@ def extract_archive(conn: Connection,
     try:
         # 如果是HTTP URL，先下载到本地
         if source_path.startswith(('http://', 'https://')):
-            success, local_path = download_file(source_path, True)
-            if not success:
-                return False
-            source_path = local_path
+            source_path = download_file(source_path, True)
         # 1. 创建临时tgz文件
         temp_tgz = _create_temp_tgz(source_path)
 

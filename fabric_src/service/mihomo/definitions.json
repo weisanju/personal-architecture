@@ -1,0 +1,8 @@
+{
+  "name": "mihomo",
+  "description": "MiHomo",
+  "exec_start": "/opt/mihomo/mihomo-linux-amd64-v1.19.3 -d /opt/mihomo/",
+  "binary": "mihomo-linux-amd64-v1.19.3",
+  "source_path": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.3/mihomo-linux-amd64-v1.19.3.gz",
+  "install_path": "/opt/mihomo/"
+}

@@ -105,6 +105,7 @@ class DeployConfig:
     restart: str = "always"  # 重启策略
     restart_sec: int = 3  # 重启间隔
     source_type: Optional[ServiceSource] = None  # 源类型（可选，如果不指定则自动检测）
+    binary: str = None  # 可执行文件路径（可选，如果不指定则自动检测）
 
     # JSON Schema for validation
     SCHEMA = {
@@ -557,7 +558,12 @@ class ServiceManagerOperator:
                 for dep in config.dependencies:
                     pkg_operator.install(dep, config.use_sudo)
 
-            # 5. 创建systemd服务文件
+            # 5. 确保binary文件可执行
+            if config.binary:
+                binary_path = os.path.join(install_path, config.binary)
+                self._execute_cmd(f"chmod +x {binary_path}", config.use_sudo)
+
+            # 6. 创建systemd服务文件
             if self.svc_manager == ServiceManager.SYSTEMD:
                 service_content = config.to_service_definition().generate_systemd_unit()
 
