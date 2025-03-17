@@ -1,0 +1,43 @@
+---
+# defaults file for wireguard
+
+# WireGuard interface name
+wireguard_interface: wg0
+
+# WireGuard network settings
+wireguard_network: 10.8.0.0/24
+wireguard_server_ip: 10.8.0.1
+wireguard_port: 51820
+
+# WireGuard server public IP or hostname
+# 这应该在清单文件中手动设置
+wireguard_server_public_ip: ""
+
+# DNS servers to use for clients
+wireguard_dns_servers:
+  - 1.1.1.1
+  - 8.8.8.8
+
+# Client IP allocation
+# 这应该在 host_vars 中为每个客户端设置
+wireguard_client_ip: 10.8.0.2
+
+# Client allowed IPs (traffic to route through VPN)
+wireguard_client_allowed_ips: "0.0.0.0/0"
+
+# Client state (active, inactive, absent)
+# - active: 客户端配置并启用
+# - absent: 移除客户端配置
+wireguard_client_state: active
+
+# Enable NAT for clients to access the internet through the server
+wireguard_enable_nat: true
+
+# Post-up and Post-down commands for server
+wireguard_postup_commands:
+  - "iptables -A FORWARD -i {{ wireguard_interface }} -j ACCEPT"
+  - "iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE"
+
+wireguard_postdown_commands:
+  - "iptables -D FORWARD -i {{ wireguard_interface }} -j ACCEPT"
+  - "iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE" 

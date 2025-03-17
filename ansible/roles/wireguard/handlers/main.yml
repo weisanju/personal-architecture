@@ -1,0 +1,8 @@
+---
+# handlers file for wireguard
+
+- name: restart wireguard
+  service:
+    name: "{{ wireguard_service_name }}"
+    state: restarted
+  become: true 

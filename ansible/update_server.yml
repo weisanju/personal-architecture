@@ -1,0 +1,7 @@
+---
+# 更新 WireGuard 服务端
+- name: 更新 WireGuard 服务端
+  hosts: wireguard_server
+  become: true
+  roles:
+    - wireguard 

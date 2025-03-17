@@ -1,0 +1,14 @@
+---
+# 更新 WireGuard 客户端
+- name: 更新 WireGuard 客户端
+  hosts: wireguard_clients
+  become: true
+  roles:
+    - wireguard
+
+# 更新服务端配置以反映客户端变更
+- name: 更新 WireGuard 服务端配置
+  hosts: wireguard_server
+  become: true
+  roles:
+    - wireguard

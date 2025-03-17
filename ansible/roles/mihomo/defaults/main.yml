@@ -21,7 +21,7 @@ mihomo_group: "root"
 backup_config: true
 config_dir: "/etc/mihomo"
 config_file: "config.yaml"
-config_template: "../proxy/config.yaml"
+config_template: "files/proxy/config.yaml"
 
 # 系统和架构映射
 os_mapping:

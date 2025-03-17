@@ -1,0 +1,41 @@
+---
+# tasks file for wireguard
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+  
+- name: Install WireGuard and dependencies
+  include_tasks: "install_{{ ansible_os_family }}.yml"
+
+- name: Create WireGuard configuration directory
+  file:
+    path: "{{ wireguard_config_path }}"
+    state: directory
+    mode: 0700
+  become: true
+
+# 设置默认客户端状态
+- name: Set default client state if not defined
+  set_fact:
+    wireguard_client_state: "{{ wireguard_client_state | default('active') }}"
+  when: inventory_hostname in groups['wireguard_clients']
+
+# 管理客户端（添加、更新、下线）
+- name: Manage WireGuard clients
+  include_tasks: manage_clients.yml
+  when: inventory_hostname in groups['wireguard_clients']
+
+# 更新服务端配置
+- name: Update WireGuard server
+  include_tasks: update_server.yml
+  when: inventory_hostname in groups['wireguard_server']
+
+# 启动服务
+- name: Enable and start WireGuard service
+  service:
+    name: "{{ wireguard_service_name }}"
+    state: started
+    enabled: yes
+  become: true
+  when: (inventory_hostname in groups['wireguard_server']) or 
+        (inventory_hostname in groups['wireguard_clients'] and wireguard_client_state != 'absent') 
