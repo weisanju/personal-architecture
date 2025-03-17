@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e 
 
 # 检查是否为root用户
 if [ "$EUID" -ne 0 ]; then 
@@ -33,13 +34,14 @@ fi
 # 安装依赖包
 if [ -f /etc/debian_version ]; then
     # Debian/Ubuntu 系统
-    apt-get update
-    apt-get install -y build-essential git pkg-config libglib2.0-dev \
+    apt update
+    apt install -y build-essential git pkg-config libglib2.0-dev \
         libjsoncpp-dev uuid-dev liblz4-dev libcap-ng-dev \
         libxml2-utils python3-minimal python3-dbus \
         python3-docutils python3-jinja2 libxml2-utils \
         libtinyxml2-dev policykit-1 libsystemd-dev \
-        python3-systemd libssl-dev libssl1.1 libgdbuspp-dev  libnl-3-dev libnl-genl-3-dev protobuf-compiler libprotobuf-dev
+        python3-systemd  libgdbuspp-dev  libnl-3-dev libnl-genl-3-dev protobuf-compiler libprotobuf-dev libdbus-1-dev libssl-dev  libssl1.1
+
 elif [ -f /etc/redhat-release ]; then
     # RHEL/CentOS/Fedora 系统
     yum install -y gcc-c++ git meson pkgconfig glib2-devel jsoncpp-devel \
