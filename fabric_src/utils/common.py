@@ -1,11 +1,12 @@
 import logging
-from fabric import Connection
 import os
-import tempfile
 import shutil
+import tempfile
 from typing import Tuple
-import requests
 from urllib.parse import urlparse, unquote
+
+import requests
+from fabric import Connection
 
 from fabric_src.utils.cache_manager import DownloadCache
 

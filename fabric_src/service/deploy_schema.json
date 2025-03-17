@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "exec_start",
+    "source_path",
+    "install_path"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "exec_start": {
+      "type": "string"
+    },
+    "source_path": {
+      "type": "string"
+    },
+    "install_path": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "user": {
+      "type": "string"
+    },
+    "merge_config_dir": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dependencies": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "use_sudo": {
+      "type": "boolean"
+    },
+    "after": {
+      "type": "string"
+    },
+    "restart": {
+      "type": "string"
+    },
+    "restart_sec": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}

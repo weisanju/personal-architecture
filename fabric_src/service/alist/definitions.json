@@ -1,0 +1,7 @@
+{
+  "name": "aist",
+  "description": "云盘Alist",
+  "exec_start": "/opt/alist/alist server",
+  "source_path": "https://github.com/AlistGo/alist/releases/download/v3.43.0/alist-linux-amd64.tar.gz",
+  "install_path": "/opt/alist/"
+}

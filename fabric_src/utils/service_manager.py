@@ -1,9 +1,10 @@
 import logging
-
+import json
+from pathlib import Path
 from fabric import Connection
 from invoke import UnexpectedExit
 from enum import Enum
-from typing import Dict, Optional, Union, Tuple, List
+from typing import Dict, Optional, Union, Tuple, List, Any
 from dataclasses import dataclass
 import os
 import tempfile
@@ -11,6 +12,7 @@ import requests
 from urllib.parse import urlparse, unquote
 from .common import extract_archive
 from .package_manager import PackageManagerOperator
+import jsonschema
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +105,96 @@ class DeployConfig:
     restart: str = "always"  # 重启策略
     restart_sec: int = 3  # 重启间隔
     source_type: Optional[ServiceSource] = None  # 源类型（可选，如果不指定则自动检测）
+
+    # JSON Schema for validation
+    SCHEMA = {
+        "type": "object",
+        "required": ["name", "description", "exec_start", "source_path", "install_path"],
+        "properties": {
+            "name": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
+            "description": {"type": "string"},
+            "exec_start": {"type": "string"},
+            "source_path": {"type": "string"},
+            "install_path": {"type": "string", "pattern": "^/"},
+            "user": {"type": "string"},
+            "merge_config_dir": {"type": ["string", "null"]},
+            "dependencies": {
+                "type": ["array", "null"],
+                "items": {"type": "string"}
+            },
+            "use_sudo": {"type": "boolean"},
+            "after": {"type": "string"},
+            "restart": {"type": "string"},
+            "restart_sec": {"type": "integer", "minimum": 1}
+        }
+    }
+
+    @classmethod
+    def from_json(cls, json_path: Union[str, Path]) -> "DeployConfig":
+        """
+        从JSON文件创建部署配置
+        
+        Args:
+            json_path: JSON配置文件路径
+            
+        Returns:
+            DeployConfig: 部署配置对象
+            
+        Raises:
+            ValueError: 配置文件格式错误
+            FileNotFoundError: 配置文件不存在
+        """
+        try:
+            # 读取JSON文件
+            with open(json_path, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
+
+            # 验证JSON Schema
+            jsonschema.validate(instance=config_data, schema=cls.SCHEMA)
+
+            # 处理相对路径
+            json_dir = Path(json_path).parent
+
+            # 处理source_path
+            if not (config_data['source_path'].startswith('/') or
+                    config_data['source_path'].startswith('http://') or
+                    config_data['source_path'].startswith('https://') or
+                    config_data['source_path'].startswith('file://')):
+                config_data['source_path'] = str(json_dir / config_data['source_path'])
+
+            # 处理merge_config_dir
+            if config_data.get('merge_config_dir'):
+                if not config_data['merge_config_dir'].startswith('/'):
+                    config_data['merge_config_dir'] = str(json_dir / config_data['merge_config_dir'])
+
+            # 创建配置对象
+            return cls(**config_data)
+
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Configuration file not found: {json_path}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error loading configuration: {str(e)}")
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "DeployConfig":
+        """
+        从字典创建部署配置
+        
+        Args:
+            config_dict: 配置字典
+            
+        Returns:
+            DeployConfig: 部署配置对象
+        """
+        # 验证JSON Schema
+        try:
+            jsonschema.validate(instance=config_dict, schema=cls.SCHEMA)
+        except jsonschema.exceptions.ValidationError as e:
+            raise ValueError(f"Invalid configuration: {str(e)}")
+
+        return cls(**config_dict)
 
     def __post_init__(self):
         """初始化后处理，验证路径和设置源类型"""
@@ -423,6 +515,17 @@ class ServiceManagerOperator:
                 # 清理临时文件
                 os.unlink(temp_file.name)
 
+    def deploy_service_with_service_dir(self, service_dir: str):
+        # 判断定义文件是否存在
+        if not os.path.exists(os.path.join(service_dir, 'definitions.json')):
+            raise FileNotFoundError(f"Service definitions.json not found in {service_dir}")
+
+        config = DeployConfig.from_json(os.path.join(service_dir, 'definitions.json'))
+
+        config.merge_config_dir = os.path.join(service_dir, 'deploy')
+
+        self.deploy_service(config)
+
     def deploy_service(self, config: DeployConfig):
         """部署服务"""
         try:
@@ -445,7 +548,7 @@ class ServiceManagerOperator:
             )
 
             # 3.copy本地目录等配置到安装目录：必须是相对路径
-            if config.merge_config_dir:
+            if config.merge_config_dir and os.path.exists(config.merge_config_dir):
                 extract_archive(self.conn, config.merge_config_dir, install_path, use_sudo=config.use_sudo)
 
             # 4. 安装依赖
