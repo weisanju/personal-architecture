@@ -1,12 +1,12 @@
 proxy-providers:
   bigwatermelon:
-    url: "https://getinfo.bigwatermelon.org/api/v1/client/subscribe?token=f57d6cac698867046f4576775e08d1a0"
+    url: "https://getinfo.bigwatermelon.org/s?token=53efa2dee3e564780b4ffc89a8c61eaa"
     type: http
     interval: 86400
     health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
     override:
       additional-prefix: "[bigwatermelon]"
-
+      
   vyy:
     url: http://vyysub.euquw.cn/api/v1/client/subscribe?token=6b4ac464eadd9b023f3ca203ff7d49bf
     type: http
@@ -14,14 +14,6 @@ proxy-providers:
     health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
     override:
       additional-prefix: "[vyy]"
-
-  vtwo:
-    url: https://vtwoc4.top/user/sub/api/scribe?token=71048e60d436d1af0c70984b2a3402c7
-    type: http
-    interval: 86400
-    health-check: {enable: true,url: "https://www.gstatic.com/generate_204", interval: 300}
-    override:
-      additional-prefix: "[vtwo]"
 
 proxies: 
   - name: "直连"
